@@ -8,3 +8,5 @@ Running this script in Fusion will create a component called "Gateway Arch", del
 The geometry created is actual size. I recommend setting the design's units to feet, as the original Arch plans are not in metric units, and the script deals in feet and inches.
 
 Please feel free to open issues or send feedback.
+
+The model has also been published to Printables at [https://www.printables.com/model/1374118-st-louis-gateway-arch-scale-model](https://www.printables.com/model/1374118-st-louis-gateway-arch-scale-model)
