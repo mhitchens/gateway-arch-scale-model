@@ -1,10 +1,18 @@
-"""This file acts as the main module for this script."""
+"""
+An Autodesk Fusion script to generate the 3D geometry of the St. Louis Gateway Arch
+
+IMPORTANT: You must turn off design history before running this script
+
+This works best when the units for your model are set to feet. The geometry is actual size, about 630ft high.
+
+Matthew Hitchens <matt@hitchens.net>
+MIT Licensed
+"""
 
 import traceback
 import adsk.core
 import adsk.fusion
 import math
-# import adsk.cam
 
 def profileForLine(line: adsk.fusion.SketchLine, sketch: adsk.fusion.Sketch) -> adsk.fusion.Profile:
     for i in range(sketch.profiles.count):
@@ -26,12 +34,10 @@ ui  = app.userInterface
 
 def run(_context: str):
     try:
-        # ui.messageBox('Hello script')
         product = app.activeProduct
         design = adsk.fusion.Design.cast(product)
         unitsManager = design.unitsManager
         rootComponent = design.rootComponent
-
 
         # we'll do all our work on a new component called 'Gateway Arch', if it already exists we'll delete it
         archName = 'Gateway Arch'
@@ -111,7 +117,6 @@ def run(_context: str):
             aY = aA*(math.cosh((aC*aX)/aL)-1)
             aEl = afc - aY
             aAngle = math.atan((aL / aC) * (1 / math.sqrt(2.0*aA*aY+aY*aY)))
-            # ui.messageBox('aAngle:\n{}'.format(aAngle))
             aQ = ((aQb - aQt) / afc) * aY + aQt
             aH = math.sqrt(aQ * (1/math.tan(math.radians(30))))
             aH1 = (aH * 2.0) / 3.0
@@ -130,8 +135,6 @@ def run(_context: str):
             
             # create a sketch plane on the cross section
             planeInput = archComp.constructionPlanes.createInput(archOcc)
-            # archComp.constructionPoints.add
-            # planeInput.setByAngle(rootComponent.yConstructionAxis, adsk.core.ValueInput.createByReal(aAngle), rootComponent.xYConstructionPlane)
             planeInput.setByThreePoints(aExtNeg, aExtPos, aInt)
             crossSectionPlane = archComp.constructionPlanes.add(planeInput)
             
@@ -184,9 +187,6 @@ def run(_context: str):
             featureInput.loftSections.add(loftProfile)
             sectionLoftFeature = sectionComp.features.loftFeatures.add(featureInput)
             
-            
-
-
             # create the notch
             featureInput = sectionComp.features.extrudeFeatures.createInput(notchProfile, adsk.fusion.FeatureOperations.CutFeatureOperation)
             featureInput.setOneSideExtent(adsk.fusion.DistanceExtentDefinition.create(adsk.core.ValueInput.createByString('1.5 ft')), adsk.fusion.ExtentDirections.PositiveExtentDirection)
@@ -207,30 +207,24 @@ def run(_context: str):
                     if currentInteriorFace.area > labelFace.area:
                         labelFace = currentInteriorFace
             sectionLabelSketch = sectionComp.sketches.add(labelFace)
-            #projectedInteriorEntities = sectionLabelSketch.project(interiorFace)
             textSketchLine = None
             for currentSketchLine in sectionLabelSketch.sketchCurves.sketchLines:
-                # if (currentSketchLine.startSketchPoint.worldGeometry.y - currentSketchLine.endSketchPoint.worldGeometry.y) < 0.01:
                 if textSketchLine is None:
                     textSketchLine = currentSketchLine
                 else:
                     if currentSketchLine.length > textSketchLine.length:
                         textSketchLine = currentSketchLine
-                    
-    
+                        
             offsetTextSketchLine = sectionLabelSketch.offset(
                 adsk.core.ObjectCollection.createWithArray([textSketchLine]), 
                 sectionLabelSketch.profiles.item(0).areaProperties(adsk.fusion.CalculationAccuracy.MediumCalculationAccuracy).centroid, 
                 unitsManager.evaluateExpression("1 ft", "cm")
             )
             
-#                ui.messageBox("{}".format(currentEntity.classType))
-            
             labelInput = sectionLabelSketch.sketchTexts.createInput2("{}".format(n), unitsManager.evaluateExpression("2 ft", "cm"))
             labelInput.setAsAlongPath(offsetTextSketchLine.item(0), False, adsk.core.HorizontalAlignments.CenterHorizontalAlignment, 0.0)
             labelInput.isHorizontalFlip = True
             labelInput.isVerticalFlip = True
-            # labelInput.fontName = 'Consolas'
             labelSketchText = sectionLabelSketch.sketchTexts.add(labelInput)
 
             labelTextExtrudeInput = sectionComp.features.extrudeFeatures.createInput(labelSketchText, adsk.fusion.FeatureOperations.CutFeatureOperation)
@@ -248,31 +242,6 @@ def run(_context: str):
                 direction = adsk.fusion.ExtentDirections.PositiveExtentDirection    
             featureInput.setOneSideExtent(adsk.fusion.DistanceExtentDefinition.create(adsk.core.ValueInput.createByString('1 ft')), direction)
             lipFeature = sectionComp.features.extrudeFeatures.add(featureInput)
-            
-            # collection = adsk.core.ObjectCollection.create()
-            # collection.add(loftFeature.startFace)
-            # collection.add(loftFeature.endFace)
-            # featureInput = sectionComp.features.shellFeatures.createInput(collection, False)
-            # featureInput.insideThickness = adsk.core.ValueInput.createByString('3 ft')
-            # shellFeature = sectionComp.features.shellFeatures.add(featureInput)
-
-            # previousBody = body
-            # body = sectionComp.bRepBodies.item(0)
-
-            # if previousBody is not None:
-            #     toolBodies = adsk.core.ObjectCollection.create()
-            #     toolBodies.add(body)
-            #     featureInput = sectionComp.features.combineFeatures.createInput(previousBody, toolBodies)
-            #     featureInput.operation = adsk.fusion.FeatureOperations.CutFeatureOperation
-            #     featureInput.isKeepToolBodies = True
-            #     sectionComp.features.combineFeatures.add(featureInput)
-
-        # centroidSketch = sketches.add(archComp.xYConstructionPlane, archOcc)
-        # centroidSketch.name = 'Centroid'
-        # newPoint = centroidSketch.sketchPoints.add(adsk.core.Point3D.create(unitsManager.evaluateExpression('30', 'ft'), 0, 0))
-        # xDim = centroidSketch.sketchDimensions.addDistanceDimension(centroidSketch.originPoint, newPoint, adsk.fusion.DimensionOrientations.HorizontalDimensionOrientation, adsk.core.Point3D.create(0, 0, 0), True)
-        # xDim.parameter.expression = '50 ft'
-        # xDim.parameter.name = 'first'
 
     except:
         app.log(f'Failed:\n{traceback.format_exc()}')
@@ -282,4 +251,5 @@ def isEdgeOnPlane(edge: adsk.fusion.BRepEdge, plane: adsk.fusion.ConstructionPla
     return isVertexOnPlane(edge.startVertex, plane) and isVertexOnPlane(edge.endVertex, plane)
 
 def isVertexOnPlane(vertex: adsk.fusion.BRepVertex, plane: adsk.fusion.ConstructionPlane) -> bool:
+
     return plane.geometry.isCoPlanarTo(adsk.core.Plane.create(vertex.geometry, plane.geometry.normal))
